@@ -17,7 +17,12 @@ fi
 
 # 將環境變數對應到腳本內部的變數名稱 
 TOKEN="$CF_TOKEN"
-EXPECTED_AUTH_KEY="$SSH_AUTH_KEY"
+# SSH_AUTH_KEY 支援多把鑰匙，用 '|' 分隔：key1|key2|key3
+EXPECTED_AUTH_KEY="$(
+    printf '%s' "$SSH_AUTH_KEY" \
+    | tr -d '\r' \
+    | awk -v RS='|' '{gsub(/^[ \t\r\n]+|[ \t\r\n]+$/, "", $0); if (length($0) > 0) print $0}'
+)"
 
 
 # ===========================
@@ -192,7 +197,7 @@ while true; do
 
     if [ "$CURRENT_KEY_CONTENT" != "$EXPECTED_AUTH_KEY" ]; then
         echo "$CURRENT_TIME: Authorized keys mismatch or missing. Updating..."
-        echo "$EXPECTED_AUTH_KEY" > "$KEY_FILE"
+        printf '%s\n' "$EXPECTED_AUTH_KEY" > "$KEY_FILE"
         chmod 600 "$KEY_FILE"
         echo "$CURRENT_TIME: Authorized keys updated."
     fi
